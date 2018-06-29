@@ -200,13 +200,23 @@ module Apartment
       end
 
       def swap_schema_qualifier(sql)
-        sql.gsub(/#{default_tenant}\.\w*/) do |match|
+        sql = sql.gsub(/#{default_tenant}\.\w*/) do |match|
           if Apartment.pg_excluded_names.any? { |name| match.include? name }
             match
           else
             match.gsub("#{default_tenant}.", %{"#{current}".})
           end
         end
+
+        excluded_tables = Apartment.excluded_models.map{|m| m.tableize }
+        excluded_tables.each do |table|
+          # Replace FK and Column references with full table path (including schema)
+          sql = sql.gsub(/(\s)(?!#{default_tenant}\.)#{table}([\(\.]|_id_seq)/, "\\1#{default_tenant}.#{table}\\2")
+          sql = sql.gsub(/JOIN #{table}/, "JOIN #{default_tenant}.#{table}")
+        end
+
+        sql = sql.gsub(/CREATE (SEQUENCE|TABLE)/, "CREATE \\1 IF NOT EXISTS")
+        sql
       end
 
       #   Checks if any of regexps matches against input
