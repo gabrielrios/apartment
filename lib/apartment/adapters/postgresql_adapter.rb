@@ -212,7 +212,7 @@ module Apartment
         excluded_tables.each do |table|
           # Replace FK and Column references with full table path (including schema)
           sql = sql.gsub(/(\s)(?!#{default_tenant}\.)#{table}([\(\.]|_id_seq)/, "\\1#{default_tenant}.#{table}\\2")
-          sql = sql.gsub(/JOIN #{table}/, "JOIN #{default_tenant}.#{table}")
+          sql = sql.gsub(/JOIN ("?#{current}"?\.)?#{table}/, "JOIN #{default_tenant}.#{table}")
         end
 
         sql = sql.gsub(/CREATE (SEQUENCE|TABLE)/, "CREATE \\1 IF NOT EXISTS")
